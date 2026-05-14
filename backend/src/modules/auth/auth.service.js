@@ -9,6 +9,12 @@ export const register = async ({
  roles
 }) => {
 
+  const requestedRoles = [...new Set(roles || [])];
+
+  if (requestedRoles.length === 0) {
+    throw new Error('Selecciona al menos un rol');
+  }
+
   const existingUser = await prisma.user.findUnique({
     where: { email }
   });
@@ -23,15 +29,48 @@ export const register = async ({
   );
 
   // Buscar roles seleccionados
-  const roleRecords = await prisma.role.findMany({
+  let roleRecords = await prisma.role.findMany({
 
     where: {
       name: {
-        in: roles
+        in: requestedRoles
       }
     }
 
   });
+
+  // Si faltan roles válidos base, los crea automáticamente.
+  if (roleRecords.length !== requestedRoles.length) {
+
+    const allowedRoles = ['roomie', 'host', 'admin'];
+
+    const missingRoles = requestedRoles.filter(
+      (role) => !roleRecords.some((record) => record.name === role)
+    );
+
+    const invalidRoles = missingRoles.filter(
+      (role) => !allowedRoles.includes(role)
+    );
+
+    if (invalidRoles.length > 0) {
+      throw new Error('Roles inválidos');
+    }
+
+    if (missingRoles.length > 0) {
+      await prisma.role.createMany({
+        data: missingRoles.map((name) => ({ name })),
+        skipDuplicates: true
+      });
+
+      roleRecords = await prisma.role.findMany({
+        where: {
+          name: {
+            in: requestedRoles
+          }
+        }
+      });
+    }
+  }
 
   if (roleRecords.length === 0) {
     throw new Error('Roles inválidos');
