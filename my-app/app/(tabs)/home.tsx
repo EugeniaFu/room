@@ -108,6 +108,11 @@ export default function Home() {
   const filteredListings =
     listings.filter((listing) => {
 
+      // como roomie, nunca te muestres a ti mismo en el feed
+      if (isRoomie && listing.ownerId === user?.id) {
+        return false;
+      }
+
       const city =
         listing.location?.city
           ?.toLowerCase() || '';
@@ -898,41 +903,45 @@ export default function Home() {
 
                 </View>
 
-                <TouchableOpacity
-                  style={styles.connectButton}
-                  onPress={async () => {
+                {isRoomie && selectedListing.ownerId !== user?.id && (
 
-                    try {
+                  <TouchableOpacity
+                    style={styles.connectButton}
+                    onPress={async () => {
 
-                      await api.post(
-                        '/connection-requests',
-                        {
-                          receiverId:
-                            selectedListing.ownerId,
-                          listingId:
-                            selectedListing.id,
-                        }
-                      );
+                      try {
 
-                      alert(
-                        'Solicitud enviada'
-                      );
+                        const response = await api.post(
+                          '/conversations/start-for-listing',
+                          {
+                            listingId: selectedListing.id,
+                          }
+                        );
 
-                    } catch (error: any) {
+                        setModalVisible(false);
 
-                      alert(
-                        error?.response?.data?.error ||
-                        'Error enviando solicitud'
-                      );
-                    }
-                  }}
-                >
+                        router.push({
+                          pathname: '/(chat)/messages/[id]',
+                          params: { id: response.data.id },
+                        });
 
-                  <Text style={styles.connectButtonText}>
-                    Solicitar conexión
-                  </Text>
+                      } catch (error: any) {
 
-                </TouchableOpacity>
+                        alert(
+                          error?.response?.data?.error ||
+                          'Error al iniciar la conversación'
+                        );
+                      }
+                    }}
+                  >
+
+                    <Text style={styles.connectButtonText}>
+                      Enviar mensaje al anfitrión
+                    </Text>
+
+                  </TouchableOpacity>
+
+                )}
 
                 <TouchableOpacity
                   style={styles.closeButton}

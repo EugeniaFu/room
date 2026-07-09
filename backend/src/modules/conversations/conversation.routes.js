@@ -9,6 +9,12 @@ from '../../middleware/auth.middleware.js';
 const router =
   express.Router();
 
+router.post(
+  '/start-for-listing',
+  authMiddleware,
+  controller.startConversationForListing
+);
+
 router.get(
   '/',
   authMiddleware,

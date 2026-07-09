@@ -61,31 +61,11 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="discover"
-        options={{
-          title: 'Descubrir',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="requests"
-        options={{
-          title: 'Solicitudes',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="mail" size={size} color={color} />
           ),
         }}
       />

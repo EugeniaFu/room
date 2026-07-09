@@ -1,5 +1,62 @@
 import prisma from '../../config/prisma.js';
 
+// Un roomie interesado en una publicación le escribe directo
+// al anfitrión — sin pasar por una solicitud pendiente que
+// alguien tenga que aceptar primero.
+export const startConversationForListing = async (
+  roomieId,
+  listingId
+) => {
+
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+  });
+
+  if (!listing) {
+    throw new Error('Publicación no encontrada');
+  }
+
+  if (listing.ownerId === roomieId) {
+
+    throw new Error(
+      'No puedes iniciar una conversación contigo mismo'
+    );
+  }
+
+  const hostId = listing.ownerId;
+
+  const existing = await prisma.conversation.findFirst({
+
+    where: {
+      listingId,
+      participants: {
+        some: { userId: roomieId },
+      },
+      AND: {
+        participants: {
+          some: { userId: hostId },
+        },
+      },
+    },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.conversation.create({
+    data: {
+      listingId,
+      participants: {
+        create: [
+          { userId: roomieId },
+          { userId: hostId },
+        ],
+      },
+    },
+  });
+};
+
 export const getMyConversations =
   async (userId) => {
 

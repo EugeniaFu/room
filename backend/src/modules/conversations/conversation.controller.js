@@ -3,6 +3,27 @@ import * as service from './conversation.service.js';
 import { getIO }
 from '../../socket.js';
 
+export const startConversationForListing =
+  async (req, res) => {
+
+    try {
+
+      const conversation =
+        await service.startConversationForListing(
+          req.user.userId,
+          req.body.listingId
+        );
+
+      res.json(conversation);
+
+    } catch (error) {
+
+      res.status(400).json({
+        error: error.message,
+      });
+    }
+  };
+
 export const getMyConversations =
   async (req, res) => {
 
