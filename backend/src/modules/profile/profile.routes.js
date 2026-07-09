@@ -6,6 +6,10 @@ import { authMiddleware } from '../../middleware/auth.middleware.js';
 
 import { uploadAvatar } from '../../middleware/avatarUpload.middleware.js';
 
+import { uploadDocument } from '../../middleware/documentUpload.middleware.js';
+
+import { roleMiddleware } from '../../middleware/role.middleware.js';
+
 const router = express.Router();
 
 router.post(
@@ -26,17 +30,44 @@ router.put(
   controller.updateProfile
 );
 
-router.get(
-  '/:id',
-  authMiddleware,
-  controller.getProfileById
-);
-
 router.post(
   '/avatar',
   authMiddleware,
   uploadAvatar.single('avatar'),
   controller.uploadProfileAvatar
+);
+
+router.post(
+  '/documents',
+  authMiddleware,
+  uploadDocument.single('document'),
+  controller.uploadDocument
+);
+
+router.get(
+  '/documents/me',
+  authMiddleware,
+  controller.getMyDocuments
+);
+
+router.get(
+  '/verifications/pending',
+  authMiddleware,
+  roleMiddleware('admin'),
+  controller.getPendingVerifications
+);
+
+router.put(
+  '/verifications/:userId',
+  authMiddleware,
+  roleMiddleware('admin'),
+  controller.reviewVerification
+);
+
+router.get(
+  '/:id',
+  authMiddleware,
+  controller.getProfileById
 );
 
 export default router;

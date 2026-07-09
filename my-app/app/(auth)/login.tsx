@@ -48,10 +48,20 @@ export default function Login() {
 
     } catch (err: any) {
 
-      Alert.alert(
-        'Error',
-        err.response?.data?.error || 'Error login'
-      );
+      const message =
+        err.response?.data?.error || 'Error login';
+
+      if (message.includes('confirmar tu correo')) {
+
+        router.push({
+          pathname: '/(auth)/verify-email',
+          params: { email },
+        });
+
+        return;
+      }
+
+      Alert.alert('Error', message);
 
     } finally {
 

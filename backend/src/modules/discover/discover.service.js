@@ -109,7 +109,8 @@ export const discoverUsers =
           isActive: true,
         },
 
-        include: {
+        select: {
+          id: true,
           profile: true,
           preferences: true,
         },

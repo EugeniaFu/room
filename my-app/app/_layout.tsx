@@ -33,6 +33,8 @@ export default function RootLayout() {
 
           <Stack.Screen name="(admin)/panel" />
 
+          <Stack.Screen name="(verification)/documents" />
+
           <Stack.Screen
             name="modal"
             options={{ presentation: 'modal' }}

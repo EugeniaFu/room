@@ -17,6 +17,8 @@ import {
   Image,
   SafeAreaView,
   Keyboard,
+  Modal,
+  Alert,
 } from 'react-native';
 
 import {
@@ -58,6 +60,21 @@ export default function ChatScreen() {
     useState(true);
 
   const [sending, setSending] =
+    useState(false);
+
+  const [tenancyLoading, setTenancyLoading] =
+    useState(false);
+
+  const [ratingVisible, setRatingVisible] =
+    useState(false);
+
+  const [ratingValue, setRatingValue] =
+    useState(5);
+
+  const [ratingComment, setRatingComment] =
+    useState('');
+
+  const [submittingRating, setSubmittingRating] =
     useState(false);
 
   const loadConversation =
@@ -214,6 +231,116 @@ export default function ChatScreen() {
         setSending(false);
       }
     };
+
+  const isHostOfListing =
+    !!conversation?.listing &&
+    conversation.listing.ownerId === user?.id;
+
+  const tenancy = conversation?.tenancy;
+
+  const handleConfirmMatch = async () => {
+
+    if (!conversation?.listing || !conversation?.roomieId) return;
+
+    try {
+
+      setTenancyLoading(true);
+
+      await api.post('/tenancies', {
+        listingId: conversation.listing.id,
+        roomieId: conversation.roomieId,
+      });
+
+      Alert.alert('Listo', 'Confirmaste la renta con este roomie');
+
+      await loadConversation();
+
+    } catch (err: any) {
+
+      Alert.alert(
+        'Error',
+        err.response?.data?.error || 'No se pudo confirmar el match'
+      );
+
+    } finally {
+
+      setTenancyLoading(false);
+    }
+  };
+
+  const handleEndTenancy = async () => {
+
+    if (!tenancy) return;
+
+    Alert.alert(
+      'Finalizar renta',
+      '¿Confirmas que la convivencia terminó? Después de esto podrán calificarse mutuamente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Finalizar',
+          style: 'destructive',
+          onPress: async () => {
+
+            try {
+
+              setTenancyLoading(true);
+
+              await api.put(`/tenancies/${tenancy.id}/end`);
+
+              await loadConversation();
+
+              setRatingVisible(true);
+
+            } catch (err: any) {
+
+              Alert.alert(
+                'Error',
+                err.response?.data?.error || 'No se pudo finalizar'
+              );
+
+            } finally {
+
+              setTenancyLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSubmitReview = async () => {
+
+    if (!tenancy) return;
+
+    try {
+
+      setSubmittingRating(true);
+
+      await api.post('/reviews', {
+        matchId: tenancy.id,
+        rating: ratingValue,
+        comment: ratingComment,
+      });
+
+      Alert.alert('Gracias', 'Tu calificación fue enviada');
+
+      setRatingVisible(false);
+      setRatingComment('');
+      setRatingValue(5);
+
+    } catch (err: any) {
+
+      Alert.alert(
+        'Error',
+        err.response?.data?.error || 'No se pudo enviar la calificación'
+      );
+
+    } finally {
+
+      setSubmittingRating(false);
+    }
+  };
 
   const getOtherUser =
     () => {
@@ -381,8 +508,13 @@ export default function ChatScreen() {
                   }
                 </Text>
 
-                <Text style={styles.subtitle}>
-                  Conversación activa
+                <Text
+                  style={styles.subtitle}
+                  numberOfLines={1}
+                >
+                  {conversation?.listing
+                    ? `Sobre: ${conversation.listing.title}`
+                    : 'Conversación activa'}
                 </Text>
 
               </View>
@@ -400,6 +532,83 @@ export default function ChatScreen() {
             </TouchableOpacity>
 
           </View>
+
+          {/* ESTADO DEL MATCH */}
+          {conversation?.listing && (
+
+            <View style={styles.tenancyBar}>
+
+              {!tenancy && isHostOfListing && (
+
+                <>
+                  <Text style={styles.tenancyText}>
+                    ¿Ya acordaron la renta con esta persona?
+                  </Text>
+
+                  <TouchableOpacity
+                    style={styles.tenancyButton}
+                    disabled={tenancyLoading}
+                    onPress={handleConfirmMatch}
+                  >
+                    <Text style={styles.tenancyButtonText}>
+                      {tenancyLoading ? '...' : 'Confirmar renta'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+
+              )}
+
+              {!tenancy && !isHostOfListing && (
+
+                <Text style={styles.tenancyText}>
+                  Esperando que el anfitrión confirme la renta
+                </Text>
+
+              )}
+
+              {tenancy?.status === 'ACTIVE' && (
+
+                <>
+                  <Text style={styles.tenancyText}>
+                    🏠 Match activo desde{' '}
+                    {new Date(tenancy.matchedAt).toLocaleDateString()}
+                  </Text>
+
+                  <TouchableOpacity
+                    style={[styles.tenancyButton, styles.tenancyButtonEnd]}
+                    disabled={tenancyLoading}
+                    onPress={handleEndTenancy}
+                  >
+                    <Text style={styles.tenancyButtonText}>
+                      {tenancyLoading ? '...' : 'Finalizar renta'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+
+              )}
+
+              {tenancy?.status === 'ENDED' && (
+
+                <>
+                  <Text style={styles.tenancyText}>
+                    ✅ Convivencia finalizada
+                  </Text>
+
+                  <TouchableOpacity
+                    style={styles.tenancyButton}
+                    onPress={() => setRatingVisible(true)}
+                  >
+                    <Text style={styles.tenancyButtonText}>
+                      Calificar
+                    </Text>
+                  </TouchableOpacity>
+                </>
+
+              )}
+
+            </View>
+
+          )}
 
           {/* MENSAJES */}
           <ScrollView
@@ -600,6 +809,80 @@ export default function ChatScreen() {
 
       </KeyboardAvoidingView>
 
+      {/* MODAL CALIFICACIÓN */}
+      <Modal
+        visible={ratingVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRatingVisible(false)}
+      >
+
+        <View style={styles.ratingOverlay}>
+
+          <View style={styles.ratingCard}>
+
+            <Text style={styles.ratingTitle}>
+              ¿Cómo fue tu experiencia con{' '}
+              {otherUser?.profile?.name || 'esta persona'}?
+            </Text>
+
+            <View style={styles.starsRow}>
+
+              {[1, 2, 3, 4, 5].map((star) => (
+
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setRatingValue(star)}
+                >
+                  <Ionicons
+                    name={
+                      star <= ratingValue ? 'star' : 'star-outline'
+                    }
+                    size={32}
+                    color="#F59E0B"
+                  />
+                </TouchableOpacity>
+
+              ))}
+
+            </View>
+
+            <TextInput
+              style={styles.ratingInput}
+              placeholder="Cuéntanos cómo fue la convivencia..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              value={ratingComment}
+              onChangeText={setRatingComment}
+            />
+
+            <View style={styles.ratingActions}>
+
+              <TouchableOpacity
+                style={styles.ratingCancel}
+                onPress={() => setRatingVisible(false)}
+              >
+                <Text style={styles.ratingCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.ratingSubmit}
+                disabled={submittingRating}
+                onPress={handleSubmitReview}
+              >
+                <Text style={styles.ratingSubmitText}>
+                  {submittingRating ? 'Enviando...' : 'Enviar calificación'}
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+
+          </View>
+
+        </View>
+
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -767,6 +1050,112 @@ const styles = StyleSheet.create({
   },
 
   avatarLetter: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+
+  tenancyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FDE68A',
+  },
+
+  tenancyText: {
+    flex: 1,
+    fontSize: 12.5,
+    color: '#92400E',
+    fontWeight: '600',
+  },
+
+  tenancyButton: {
+    backgroundColor: PRIMARY,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+
+  tenancyButtonEnd: {
+    backgroundColor: '#DC2626',
+  },
+
+  tenancyButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+
+  ratingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+
+  ratingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
+  },
+
+  ratingTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+
+  ratingInput: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 90,
+    textAlignVertical: 'top',
+    fontSize: 14,
+    color: '#111827',
+    marginBottom: 16,
+  },
+
+  ratingActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  ratingCancel: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+
+  ratingCancelText: {
+    color: '#374151',
+    fontWeight: '700',
+  },
+
+  ratingSubmit: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: PRIMARY,
+  },
+
+  ratingSubmitText: {
     color: '#fff',
     fontWeight: '700',
   },

@@ -221,6 +221,24 @@ export default function Chat() {
 
           </Text>
 
+          {item.listing && (
+
+            <View style={styles.listingTag}>
+              <Ionicons
+                name="home-outline"
+                size={11}
+                color="#6C63FF"
+              />
+              <Text
+                style={styles.listingTagText}
+                numberOfLines={1}
+              >
+                {item.listing.title}
+              </Text>
+            </View>
+
+          )}
+
         </View>
 
       </TouchableOpacity>
@@ -491,6 +509,20 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 14,
     marginRight: 10,
+  },
+
+  listingTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 6,
+  },
+
+  listingTagText: {
+    color: '#6C63FF',
+    fontSize: 11,
+    fontWeight: '700',
+    flexShrink: 1,
   },
 
   floatingButton: {

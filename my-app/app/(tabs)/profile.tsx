@@ -63,11 +63,35 @@ export default function Profile() {
 
   const isHost = roles.includes('host');
 
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  const [reviewsAverage, setReviewsAverage] = useState<number | null>(null);
+
   useEffect(() => {
 
     loadProfile();
 
+    loadReviews();
+
   }, []);
+
+  const loadReviews = async () => {
+
+    if (!user?.id) return;
+
+    try {
+
+      const response = await api.get(`/reviews/user/${user.id}`);
+
+      setReviews(response.data.reviews || []);
+
+      setReviewsAverage(response.data.average);
+
+    } catch (error) {
+
+      console.log(error);
+    }
+  };
 
   const loadProfile = async () => {
 
@@ -439,6 +463,91 @@ export default function Profile() {
           de la plataforma.
         </Text>
 
+        <TouchableOpacity
+          style={styles.verifyButton}
+          onPress={() =>
+            router.push('/(verification)/documents' as any)
+          }
+        >
+
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={18}
+            color="#fff"
+          />
+
+          <Text style={styles.verifyButtonText}>
+            Subir documentos de verificación
+          </Text>
+
+        </TouchableOpacity>
+
+      </View>
+
+      {/* CALIFICACIONES */}
+      <View style={styles.card}>
+
+        <View style={styles.rowBetween}>
+
+          <Text style={styles.sectionTitle}>
+            Calificaciones
+          </Text>
+
+          {reviewsAverage != null && (
+
+            <View style={styles.ratingBadge}>
+              <Ionicons name="star" size={14} color="#fff" />
+              <Text style={styles.ratingBadgeText}>
+                {reviewsAverage.toFixed(1)} ({reviews.length})
+              </Text>
+            </View>
+
+          )}
+
+        </View>
+
+        {reviews.length === 0 && (
+
+          <Text style={styles.infoText}>
+            Aún no tienes calificaciones. Aparecerán aquí cuando
+            termines una convivencia y la otra persona te califique.
+          </Text>
+
+        )}
+
+        {reviews.map((review) => (
+
+          <View key={review.id} style={styles.reviewRow}>
+
+            <View style={styles.reviewHeader}>
+
+              <Text style={styles.reviewerName}>
+                {review.reviewer?.profile?.name || 'Usuario'}
+              </Text>
+
+              <View style={styles.reviewStars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Ionicons
+                    key={star}
+                    name={star <= review.rating ? 'star' : 'star-outline'}
+                    size={13}
+                    color="#F59E0B"
+                  />
+                ))}
+              </View>
+
+            </View>
+
+            {review.comment ? (
+              <Text style={styles.reviewComment}>
+                {review.comment}
+              </Text>
+            ) : null}
+
+          </View>
+
+        ))}
+
       </View>
 
       {/* LOGOUT */}
@@ -569,6 +678,69 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     marginBottom: 10,
+  },
+
+  verifyButton: {
+    backgroundColor: PRIMARY,
+    borderRadius: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  verifyButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+
+  ratingBadgeText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+
+  reviewRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 12,
+    marginTop: 12,
+  },
+
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  reviewerName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  reviewStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+
+  reviewComment: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 18,
   },
 
   roleBadge: {

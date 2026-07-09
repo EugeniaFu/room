@@ -69,6 +69,102 @@ export const getProfileById = async (req, res) => {
   }
 };
 
+export const uploadDocument = async (req, res) => {
+
+  try {
+
+    if (!req.file) {
+
+      return res.status(400).json({
+        error: 'Archivo requerido',
+      });
+    }
+
+    if (!req.body.type) {
+
+      return res.status(400).json({
+        error: 'Tipo de documento requerido',
+      });
+    }
+
+    const url =
+      `${req.protocol}://${req.get('host')}/uploads/documents/${req.file.filename}`;
+
+    const document = await profileService.uploadDocument(
+      req.user.userId,
+      req.body.type,
+      url
+    );
+
+    res.json(document);
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(400).json({
+      error: err.message,
+    });
+  }
+};
+
+export const getMyDocuments = async (req, res) => {
+
+  try {
+
+    const documents = await profileService.getMyDocuments(
+      req.user.userId
+    );
+
+    res.json(documents);
+
+  } catch (err) {
+
+    res.status(400).json({
+      error: err.message,
+    });
+  }
+};
+
+export const getPendingVerifications = async (req, res) => {
+
+  try {
+
+    const users = await profileService.getPendingVerifications();
+
+    res.json(users);
+
+  } catch (err) {
+
+    res.status(400).json({
+      error: err.message,
+    });
+  }
+};
+
+export const reviewVerification = async (req, res) => {
+
+  try {
+
+    const user = await profileService.reviewVerification(
+      req.user.userId,
+      req.params.userId,
+      req.body.decision,
+      req.body.notes
+    );
+
+    const { password: _password, ...safeUser } = user;
+
+    res.json(safeUser);
+
+  } catch (err) {
+
+    res.status(400).json({
+      error: err.message,
+    });
+  }
+};
+
 export const uploadProfileAvatar =
   async (req, res) => {
 

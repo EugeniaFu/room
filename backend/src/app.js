@@ -8,6 +8,8 @@ import connectionRequestRoutes from './modules/connectionRequests/connectionRequ
 import conversationRoutes from './modules/conversations/conversation.routes.js';
 import discoverRoutes from './modules/discover/discover.routes.js';
 import matchRoutes from './modules/matches/match.routes.js';
+import tenancyRoutes from './modules/tenancies/tenancy.routes.js';
+import reviewRoutes from './modules/reviews/review.routes.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
 import { roleMiddleware } from './middleware/role.middleware.js';
 
@@ -79,4 +81,6 @@ app.use('/connection-requests', connectionRequestRoutes);
 app.use('/conversations', conversationRoutes);
 app.use('/discover', discoverRoutes);
 app.use('/matches', matchRoutes);
+app.use('/tenancies', tenancyRoutes);
+app.use('/reviews', reviewRoutes);
 export default app;

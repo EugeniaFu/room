@@ -64,6 +64,22 @@ export const AuthProvider = ({ children }) => {
     return user;
   };
 
+  const verifyEmail = async (email, code) => {
+
+    const response = await api.post('/auth/verify-email', {
+      email,
+      code
+    });
+
+    const { token, user } = response.data;
+
+    await SecureStore.setItemAsync('token', token);
+
+    setUser(user);
+
+    return user;
+  };
+
   const register = async (email, password) => {
 
     const response = await api.post('/auth/register', {
@@ -88,6 +104,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
+        verifyEmail,
         logout
       }}
     >

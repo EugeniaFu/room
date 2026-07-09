@@ -78,7 +78,8 @@ export const getPotentialMatches =
           },
         },
 
-        include: {
+        select: {
+          id: true,
           profile: true,
           preferences: true,
         },
@@ -296,7 +297,8 @@ export const getReceivedLikes =
 
         sender: {
 
-          include: {
+          select: {
+            id: true,
             profile: true,
           },
         },

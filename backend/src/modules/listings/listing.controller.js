@@ -14,16 +14,9 @@ export const createListing = async (req, res) => {
       await listingService.createListing(
         req.user.userId,
         {
-          title: req.body.title,
-          description: req.body.description,
+          ...req.body,
 
           price: parseFloat(req.body.price),
-
-          type: req.body.type,
-
-          country: req.body.country,
-          state: req.body.state,
-          city: req.body.city,
 
           latitude: parseFloat(req.body.latitude),
           longitude: parseFloat(req.body.longitude),
@@ -135,6 +128,47 @@ export const getMyListings = async (req, res) => {
   } catch (err) {
 
     console.log(err);
+
+    res.status(400).json({
+      error: err.message
+    });
+
+  }
+};
+
+export const getPendingListings = async (req, res) => {
+
+  try {
+
+    const listings =
+      await listingService.getPendingListings();
+
+    res.json(listings);
+
+  } catch (err) {
+
+    res.status(400).json({
+      error: err.message
+    });
+
+  }
+};
+
+export const reviewListing = async (req, res) => {
+
+  try {
+
+    const listing =
+      await listingService.reviewListing(
+        req.user.userId,
+        req.params.id,
+        req.body.decision,
+        req.body.notes
+      );
+
+    res.json(listing);
+
+  } catch (err) {
 
     res.status(400).json({
       error: err.message

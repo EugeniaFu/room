@@ -19,7 +19,8 @@ export const getMyConversations =
           participants: {
             include: {
               user: {
-                include: {
+                select: {
+                  id: true,
                   profile: true,
                 },
               },
@@ -32,6 +33,14 @@ export const getMyConversations =
             },
 
             take: 1,
+          },
+
+          listing: {
+            select: {
+              id: true,
+              title: true,
+              coverImage: true,
+            },
           },
         },
 
@@ -54,6 +63,8 @@ export const getMyConversations =
 
           otherUser,
 
+          listing: conversation.listing,
+
           lastMessage:
             conversation.messages[0]
               ?.content || '',
@@ -72,7 +83,7 @@ export const getMyConversations =
     userId
   ) => {
 
-    return await prisma.conversation.findFirst({
+    const conversation = await prisma.conversation.findFirst({
 
       where: {
         id: conversationId,
@@ -89,7 +100,8 @@ export const getMyConversations =
         participants: {
           include: {
             user: {
-              include: {
+              select: {
+                id: true,
                 profile: true,
               },
             },
@@ -99,7 +111,8 @@ export const getMyConversations =
         messages: {
           include: {
             sender: {
-              include: {
+              select: {
+                id: true,
                 profile: true,
               },
             },
@@ -109,8 +122,44 @@ export const getMyConversations =
             createdAt: 'asc',
           },
         },
+
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            coverImage: true,
+            ownerId: true,
+          },
+        },
       },
     });
+
+    if (!conversation || !conversation.listing) {
+      return conversation;
+    }
+
+    const roomieParticipant =
+      conversation.participants.find(
+        (p) => p.userId !== conversation.listing.ownerId
+      );
+
+    const tenancy = roomieParticipant
+      ? await prisma.listingRoommate.findFirst({
+          where: {
+            listingId: conversation.listing.id,
+            userId: roomieParticipant.userId,
+          },
+          orderBy: {
+            matchedAt: 'desc',
+          },
+        })
+      : null;
+
+    return {
+      ...conversation,
+      tenancy,
+      roomieId: roomieParticipant?.userId || null,
+    };
   };
 
 export const sendMessage =
@@ -130,7 +179,8 @@ export const sendMessage =
 
       include: {
         sender: {
-          include: {
+          select: {
+            id: true,
             profile: true,
           },
         },

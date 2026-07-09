@@ -45,6 +45,65 @@ export default function CreateListing() {
 
   const [images, setImages] = useState<string[]>(([]));
 
+  // Pantalla 1: tipo de renta
+  const [rentalMode, setRentalMode] = useState<'SHARED' | 'NEW_ONLY'>('SHARED');
+
+  // Pantalla 3: características
+  const [bedroomCount, setBedroomCount] = useState('');
+  const [roomOwnership, setRoomOwnership] = useState<'PRIVATE' | 'SHARED'>('PRIVATE');
+  const [floor, setFloor] = useState('');
+  const [amenities, setAmenities] = useState<string[]>([]);
+
+  // Pantalla 4: convivencia
+  const [hasPetsNow, setHasPetsNow] = useState(false);
+  const [petsAllowed, setPetsAllowed] = useState(false);
+  const [allowedPetTypes, setAllowedPetTypes] = useState('');
+  const [privateAreas, setPrivateAreas] = useState('');
+  const [sharedAreas, setSharedAreas] = useState('');
+
+  // Pantalla 5: servicios, ubicación y costos
+  const [includedServices, setIncludedServices] = useState<string[]>([]);
+  const [extraServices, setExtraServices] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [nearbyLandmark, setNearbyLandmark] = useState('');
+  const [minStayMonths, setMinStayMonths] = useState('');
+
+  // Pantalla 6: perfil del anfitrión y reglas
+  const [seekingGender, setSeekingGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | ''>('');
+  const [wheelchairAccessible, setWheelchairAccessible] = useState(false);
+  const [hostDescription, setHostDescription] = useState('');
+  const [seekingRoommateBio, setSeekingRoommateBio] = useState('');
+  const [houseRules, setHouseRules] = useState('');
+
+  const AMENITY_OPTIONS = [
+    { value: 'LIVING_ROOM', label: 'Sala' },
+    { value: 'KITCHEN', label: 'Cocina' },
+    { value: 'BATHROOM', label: 'Baño' },
+    { value: 'YARD', label: 'Patio' },
+    { value: 'TERRACE', label: 'Terraza' },
+    { value: 'LAUNDRY_AREA', label: 'Área de lavado' },
+    { value: 'PARKING', label: 'Estacionamiento' },
+  ];
+
+  const SERVICE_OPTIONS = [
+    { value: 'luz', label: 'Luz' },
+    { value: 'agua', label: 'Agua' },
+    { value: 'internet', label: 'Internet' },
+  ];
+
+  const toggleFromList = (
+    list: string[],
+    value: string,
+    setList: (value: string[]) => void
+  ) => {
+
+    if (list.includes(value)) {
+      setList(list.filter((item) => item !== value));
+    } else {
+      setList([...list, value]);
+    }
+  };
+
   const pickImage = async () => {
 
     const permission =
@@ -114,6 +173,55 @@ export default function CreateListing() {
       formData.append('latitude', latitude);
 
       formData.append('longitude', longitude);
+
+      formData.append('rentalMode', rentalMode);
+      formData.append('bedroomCount', bedroomCount);
+      formData.append('roomOwnership', roomOwnership);
+      formData.append('floor', floor);
+      formData.append('amenities', JSON.stringify(amenities));
+
+      formData.append('hasPetsNow', String(hasPetsNow));
+      formData.append('petsAllowed', String(petsAllowed));
+      formData.append(
+        'allowedPetTypes',
+        JSON.stringify(
+          allowedPetTypes.split(',').map((item) => item.trim()).filter(Boolean)
+        )
+      );
+      formData.append(
+        'privateAreas',
+        JSON.stringify(
+          privateAreas.split(',').map((item) => item.trim()).filter(Boolean)
+        )
+      );
+      formData.append(
+        'sharedAreas',
+        JSON.stringify(
+          sharedAreas.split(',').map((item) => item.trim()).filter(Boolean)
+        )
+      );
+
+      formData.append('includedServices', JSON.stringify(includedServices));
+      formData.append(
+        'extraServices',
+        JSON.stringify(
+          extraServices.split(',').map((item) => item.trim()).filter(Boolean)
+        )
+      );
+      formData.append('neighborhood', neighborhood);
+      formData.append('nearbyLandmark', nearbyLandmark);
+      formData.append('minStayMonths', minStayMonths);
+
+      formData.append('seekingGender', seekingGender);
+      formData.append('wheelchairAccessible', String(wheelchairAccessible));
+      formData.append('hostDescription', hostDescription);
+      formData.append('seekingRoommateBio', seekingRoommateBio);
+      formData.append(
+        'houseRules',
+        JSON.stringify(
+          houseRules.split('\n').map((item) => item.trim()).filter(Boolean)
+        )
+      );
 
       images.forEach((image, index) => {
 
@@ -464,6 +572,351 @@ export default function CreateListing() {
 
         </View>
 
+        {/* RENTAL MODE */}
+        <Text style={styles.label}>
+          Tipo de renta
+        </Text>
+
+        <View style={styles.typeContainer}>
+
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              rentalMode === 'SHARED' && styles.typeButtonActive,
+            ]}
+            onPress={() => setRentalMode('SHARED')}
+          >
+            <Text style={[styles.typeText, rentalMode === 'SHARED' && styles.typeTextActive]}>
+              Vivienda compartida
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              rentalMode === 'NEW_ONLY' && styles.typeButtonActive,
+            ]}
+            onPress={() => setRentalMode('NEW_ONLY')}
+          >
+            <Text style={[styles.typeText, rentalMode === 'NEW_ONLY' && styles.typeTextActive]}>
+              Renta nueva
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+
+        {/* SECTION: características */}
+        <Text style={styles.sectionTitle}>Características de la propiedad</Text>
+
+        <View style={styles.row}>
+
+          <View style={[styles.inputContainer, styles.half]}>
+            <Text style={styles.label}>Dormitorios</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              placeholder="2"
+              placeholderTextColor="#999"
+              value={bedroomCount}
+              onChangeText={setBedroomCount}
+            />
+          </View>
+
+          <View style={[styles.inputContainer, styles.half]}>
+            <Text style={styles.label}>Piso</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              placeholder="2"
+              placeholderTextColor="#999"
+              value={floor}
+              onChangeText={setFloor}
+            />
+          </View>
+
+        </View>
+
+        <Text style={styles.label}>Habitación en renta</Text>
+
+        <View style={styles.typeContainer}>
+
+          <TouchableOpacity
+            style={[styles.typeButton, roomOwnership === 'PRIVATE' && styles.typeButtonActive]}
+            onPress={() => setRoomOwnership('PRIVATE')}
+          >
+            <Text style={[styles.typeText, roomOwnership === 'PRIVATE' && styles.typeTextActive]}>
+              Propia
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.typeButton, roomOwnership === 'SHARED' && styles.typeButtonActive]}
+            onPress={() => setRoomOwnership('SHARED')}
+          >
+            <Text style={[styles.typeText, roomOwnership === 'SHARED' && styles.typeTextActive]}>
+              Compartida
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+
+        <Text style={styles.label}>Áreas de la propiedad</Text>
+
+        <View style={styles.chipsContainer}>
+
+          {AMENITY_OPTIONS.map((option) => (
+
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.chip,
+                amenities.includes(option.value) && styles.chipActive,
+              ]}
+              onPress={() => toggleFromList(amenities, option.value, setAmenities)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  amenities.includes(option.value) && styles.chipTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+
+          ))}
+
+        </View>
+
+        {/* SECTION: convivencia */}
+        <Text style={styles.sectionTitle}>Convivencia</Text>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>¿Actualmente hay mascotas?</Text>
+          <TouchableOpacity
+            style={[styles.switchButton, hasPetsNow && styles.switchButtonActive]}
+            onPress={() => setHasPetsNow(!hasPetsNow)}
+          >
+            <Text style={[styles.switchButtonText, hasPetsNow && styles.switchButtonTextActive]}>
+              {hasPetsNow ? 'Sí' : 'No'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>¿Se permiten mascotas?</Text>
+          <TouchableOpacity
+            style={[styles.switchButton, petsAllowed && styles.switchButtonActive]}
+            onPress={() => setPetsAllowed(!petsAllowed)}
+          >
+            <Text style={[styles.switchButtonText, petsAllowed && styles.switchButtonTextActive]}>
+              {petsAllowed ? 'Sí' : 'No'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {petsAllowed && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Tipo de mascotas permitidas</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Perros, gatos..."
+              placeholderTextColor="#999"
+              value={allowedPetTypes}
+              onChangeText={setAllowedPetTypes}
+            />
+          </View>
+        )}
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Áreas privadas</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Recámara, baño..."
+            placeholderTextColor="#999"
+            value={privateAreas}
+            onChangeText={setPrivateAreas}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Áreas compartidas</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Cocina, sala..."
+            placeholderTextColor="#999"
+            value={sharedAreas}
+            onChangeText={setSharedAreas}
+          />
+        </View>
+
+        {/* SECTION: servicios, ubicación y costos */}
+        <Text style={styles.sectionTitle}>Servicios y ubicación</Text>
+
+        <Text style={styles.label}>Servicios incluidos en la renta</Text>
+
+        <View style={styles.chipsContainer}>
+
+          {SERVICE_OPTIONS.map((option) => (
+
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.chip,
+                includedServices.includes(option.value) && styles.chipActive,
+              ]}
+              onPress={() =>
+                toggleFromList(includedServices, option.value, setIncludedServices)
+              }
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  includedServices.includes(option.value) && styles.chipTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+
+          ))}
+
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Servicios adicionales (se pagan aparte)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Gas, TV de paga..."
+            placeholderTextColor="#999"
+            value={extraServices}
+            onChangeText={setExtraServices}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Colonia o zona</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Centro"
+            placeholderTextColor="#999"
+            value={neighborhood}
+            onChangeText={setNeighborhood}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Cercanía a universidad o punto de referencia</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="A 10 min de la UAC"
+            placeholderTextColor="#999"
+            value={nearbyLandmark}
+            onChangeText={setNearbyLandmark}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Duración mínima de renta (meses)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            placeholder="6"
+            placeholderTextColor="#999"
+            value={minStayMonths}
+            onChangeText={setMinStayMonths}
+          />
+        </View>
+
+        {/* SECTION: perfil y reglas */}
+        <Text style={styles.sectionTitle}>A quién buscas y reglas del lugar</Text>
+
+        <Text style={styles.label}>Busco compañeros</Text>
+
+        <View style={styles.chipsContainer}>
+
+          {[
+            { value: 'MALE', label: 'Hombres' },
+            { value: 'FEMALE', label: 'Mujeres' },
+            { value: 'OTHER', label: 'Otro' },
+            { value: '', label: 'Indistinto' },
+          ].map((option) => (
+
+            <TouchableOpacity
+              key={option.label}
+              style={[
+                styles.chip,
+                seekingGender === option.value && styles.chipActive,
+              ]}
+              onPress={() => setSeekingGender(option.value as any)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  seekingGender === option.value && styles.chipTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+
+          ))}
+
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>¿Apto para discapacidad?</Text>
+          <TouchableOpacity
+            style={[styles.switchButton, wheelchairAccessible && styles.switchButtonActive]}
+            onPress={() => setWheelchairAccessible(!wheelchairAccessible)}
+          >
+            <Text
+              style={[
+                styles.switchButtonText,
+                wheelchairAccessible && styles.switchButtonTextActive,
+              ]}
+            >
+              {wheelchairAccessible ? 'Sí' : 'No'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Descripción personal (anfitrión)</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            multiline
+            placeholder="Cuéntanos sobre ti..."
+            placeholderTextColor="#999"
+            value={hostDescription}
+            onChangeText={setHostDescription}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>¿Qué tipo de roomie buscas?</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            multiline
+            placeholder="Personalidad, hábitos, responsabilidades a compartir..."
+            placeholderTextColor="#999"
+            value={seekingRoommateBio}
+            onChangeText={setSeekingRoommateBio}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Reglas de convivencia (una por línea)</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            multiline
+            placeholder={'No fiestas después de las 11pm\nMantener áreas comunes limpias'}
+            placeholderTextColor="#999"
+            value={houseRules}
+            onChangeText={setHouseRules}
+          />
+        </View>
+
         {/* BUTTON */}
         <TouchableOpacity
           style={styles.button}
@@ -490,6 +943,87 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F4F6FB',
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    marginTop: 10,
+    marginBottom: 12,
+  },
+
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+
+  half: {
+    flex: 1,
+  },
+
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+
+  chip: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+  },
+
+  chipActive: {
+    backgroundColor: PRIMARY,
+  },
+
+  chipText: {
+    color: '#374151',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+
+  chipTextActive: {
+    color: '#fff',
+  },
+
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+
+  switchLabel: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 12,
+  },
+
+  switchButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+  },
+
+  switchButtonActive: {
+    backgroundColor: PRIMARY,
+  },
+
+  switchButtonText: {
+    color: '#374151',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  switchButtonTextActive: {
+    color: '#fff',
   },
 
   header: {

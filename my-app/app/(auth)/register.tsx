@@ -31,23 +31,6 @@ export default function Register() {
 
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [roles, setRoles] = useState<string[]>([]);
-
-  const toggleRole = (role: string) => {
-
-    if (roles.includes(role)) {
-
-      setRoles(
-        roles.filter(r => r !== role)
-      );
-
-    } else {
-
-      setRoles([...roles, role]);
-
-    }
-  };
-
   const handleRegister = async () => {
 
     try {
@@ -78,11 +61,11 @@ export default function Register() {
         return;
       }
 
-      if (roles.length === 0) {
+      if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
 
         Alert.alert(
-          'Error',
-          'Selecciona al menos un rol'
+          'Contraseña débil',
+          'Debe tener al menos 8 caracteres, con al menos una letra y un número'
         );
 
         return;
@@ -92,16 +75,13 @@ export default function Register() {
         name,
         email,
         phone,
-        password,
-        roles
+        password
       });
 
-      Alert.alert(
-        'Éxito',
-        'Cuenta creada correctamente'
-      );
-
-      router.replace('/login');
+      router.push({
+        pathname: '/(auth)/verify-email',
+        params: { email },
+      });
 
     } catch (error: any) {
 
@@ -192,47 +172,13 @@ export default function Register() {
               />
             </View>
 
-            {/* Roles */}
-            <View style={styles.inputContainer}>
-
-              <Text style={styles.label}>
-                Selecciona el tipo de cuenta a crear
+            {/* Nota de roles */}
+            <View style={styles.noteBox}>
+              <Text style={styles.noteText}>
+                Tu cuenta podrá usarse tanto para rentar un espacio
+                (Roomie) como para publicar el tuyo (Anfitrión) — podrás
+                elegir con cuál entrar cada vez que inicies sesión.
               </Text>
-
-              <View style={styles.rolesContainer}>
-
-                <TouchableOpacity
-                  style={[
-                    styles.roleButton,
-                    roles.includes('roomie') &&
-                    styles.roleButtonActive
-                  ]}
-                  onPress={() => toggleRole('roomie')}
-                >
-
-                  <Text style={styles.roleText}>
-                     Roomie
-                  </Text>
-
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.roleButton,
-                    roles.includes('host') &&
-                    styles.roleButtonActive
-                  ]}
-                  onPress={() => toggleRole('host')}
-                >
-
-                  <Text style={styles.roleText}>
-                     Anfitrión
-                  </Text>
-
-                </TouchableOpacity>
-
-              </View>
-
             </View>
 
             {/* Password */}
@@ -249,6 +195,10 @@ export default function Register() {
                 secureTextEntry
                 style={styles.input}
               />
+
+              <Text style={styles.hint}>
+                Mínimo 8 caracteres, con al menos una letra y un número
+              </Text>
             </View>
 
             {/* Confirm Password */}
@@ -356,26 +306,23 @@ const styles = StyleSheet.create({
     borderColor: '#E0E3EB',
   },
 
-  rolesContainer: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-
-  roleButton: {
-    flex: 1,
+  noteBox: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 14,
     padding: 14,
-    borderRadius: 12,
-    backgroundColor: '#ECEFFC',
-    alignItems: 'center',
+    marginBottom: 14,
   },
 
-  roleButtonActive: {
-    backgroundColor: '#6C63FF',
+  noteText: {
+    fontSize: 12,
+    color: '#4F46E5',
+    lineHeight: 17,
   },
 
-  roleText: {
-    color: '#333',
-    fontWeight: '600',
+  hint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 6,
   },
 
   button: {

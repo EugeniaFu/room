@@ -8,7 +8,8 @@ export const sendRequest =
       const request =
         await service.sendRequest(
           req.user.userId,
-          req.body.receiverId
+          req.body.receiverId,
+          req.body.listingId
         );
 
       res.json(request);

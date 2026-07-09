@@ -195,6 +195,44 @@ export default function Requests() {
                     }
                   </Text>
 
+                  {item.listing ? (
+
+                    <View style={styles.listingTag}>
+                      <Ionicons
+                        name="home-outline"
+                        size={12}
+                        color="#6C63FF"
+                      />
+                      <Text style={styles.listingTagText}>
+                        Sobre: {item.listing.title}
+                      </Text>
+                    </View>
+
+                  ) : (
+
+                    <View
+                      style={[
+                        styles.listingTag,
+                        { backgroundColor: '#F3F4F6' },
+                      ]}
+                    >
+                      <Ionicons
+                        name="sparkles-outline"
+                        size={12}
+                        color="#6B7280"
+                      />
+                      <Text
+                        style={[
+                          styles.listingTagText,
+                          { color: '#6B7280' },
+                        ]}
+                      >
+                        Compatibilidad de perfil
+                      </Text>
+                    </View>
+
+                  )}
+
                 </View>
 
                 {/* Actions */}
@@ -318,6 +356,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#6B7280',
     fontSize: 13,
+  },
+
+  listingTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#ECEBFF',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+
+  listingTagText: {
+    color: '#6C63FF',
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   actions: {

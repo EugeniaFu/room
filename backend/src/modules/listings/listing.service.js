@@ -1,5 +1,68 @@
 import prisma from '../../config/prisma.js';
 
+// Campos de detalle del inmueble que llegan como texto (FormData)
+// y deben convertirse a arreglo, número o booleano.
+const parseArrayField = (value) => {
+
+  if (Array.isArray(value)) return value;
+
+  if (!value) return [];
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return String(value)
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+};
+
+const parseBooleanField = (value) => {
+  return value === true || value === 'true';
+};
+
+const buildListingDetails = (data) => ({
+
+  rentalMode: data.rentalMode || undefined,
+  bedroomCount:
+    data.bedroomCount !== undefined
+      ? parseInt(data.bedroomCount, 10)
+      : undefined,
+  roomOwnership: data.roomOwnership || undefined,
+  floor:
+    data.floor !== undefined
+      ? parseInt(data.floor, 10)
+      : undefined,
+  amenities: parseArrayField(data.amenities),
+
+  hasPetsNow: parseBooleanField(data.hasPetsNow),
+  petsAllowed: parseBooleanField(data.petsAllowed),
+  allowedPetTypes: parseArrayField(data.allowedPetTypes),
+  privateAreas: parseArrayField(data.privateAreas),
+  sharedAreas: parseArrayField(data.sharedAreas),
+
+  includedServices: parseArrayField(data.includedServices),
+  extraServices: parseArrayField(data.extraServices),
+  neighborhood: data.neighborhood || undefined,
+  nearbyLandmark: data.nearbyLandmark || undefined,
+  minStayMonths:
+    data.minStayMonths !== undefined
+      ? parseInt(data.minStayMonths, 10)
+      : undefined,
+
+  seekingGender:
+    data.seekingGender !== undefined
+      ? data.seekingGender || null
+      : undefined,
+  wheelchairAccessible: parseBooleanField(
+    data.wheelchairAccessible
+  ),
+  hostDescription: data.hostDescription || undefined,
+  seekingRoommateBio: data.seekingRoommateBio || undefined,
+  houseRules: parseArrayField(data.houseRules),
+});
+
 export const createListing = async (
   userId,
   data
@@ -19,6 +82,11 @@ export const createListing = async (
       price: parseFloat(data.price),
 
       type: data.type,
+
+      ...buildListingDetails(data),
+
+      // toda publicación nueva entra pendiente de revisión del admin
+      reviewStatus: 'PENDING',
 
       location: {
 
@@ -67,7 +135,9 @@ export const getListingById = async (id) => {
 
       owner: {
 
-        include: {
+        select: {
+          id: true,
+          verificationStatus: true,
           profile: true
         }
       }
@@ -132,6 +202,13 @@ export const updateListing = async (
 
       type: data.type,
 
+      ...buildListingDetails(data),
+
+      // cualquier edición vuelve a pedir revisión del admin
+      reviewStatus: 'PENDING',
+      reviewedById: null,
+      reviewedAt: null,
+
       location: {
 
         update: {
@@ -154,6 +231,83 @@ export const updateListing = async (
     include: {
       location: true,
       images: true,
+    },
+  });
+};
+
+export const getPendingListings = async () => {
+
+  return prisma.listing.findMany({
+
+    where: {
+      reviewStatus: 'PENDING',
+    },
+
+    include: {
+
+      location: true,
+
+      images: true,
+
+      owner: {
+
+        select: {
+
+          id: true,
+
+          email: true,
+
+          profile: true,
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
+};
+
+export const reviewListing = async (
+  adminId,
+  listingId,
+  decision, // 'APPROVED' | 'REJECTED'
+  notes
+) => {
+
+  if (
+    decision !== 'APPROVED' &&
+    decision !== 'REJECTED'
+  ) {
+
+    throw new Error(
+      'Decisión inválida'
+    );
+  }
+
+  const listing =
+    await prisma.listing.findUnique({
+      where: { id: listingId },
+    });
+
+  if (!listing) {
+
+    throw new Error(
+      'Publicación no encontrada'
+    );
+  }
+
+  return prisma.listing.update({
+
+    where: { id: listingId },
+
+    data: {
+
+      reviewStatus: decision,
+
+      reviewedById: adminId,
+
+      reviewedAt: new Date(),
     },
   });
 };
@@ -218,6 +372,11 @@ export const deleteListing = async (
 export const getAllListings = async () => {
 
   return prisma.listing.findMany({
+
+    where: {
+      reviewStatus: 'APPROVED',
+      status: 'ACTIVE',
+    },
 
     include: {
 

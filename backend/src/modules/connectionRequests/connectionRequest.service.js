@@ -2,7 +2,8 @@ import prisma from '../../config/prisma.js';
 
 export const sendRequest = async (
   senderId,
-  receiverId
+  receiverId,
+  listingId
 ) => {
 
   if (senderId === receiverId) {
@@ -13,19 +14,20 @@ export const sendRequest = async (
   }
 
   const existing =
-    await prisma.connectionRequest.findUnique({
+    await prisma.connectionRequest.findFirst({
       where: {
-        senderId_receiverId: {
-          senderId,
-          receiverId,
-        },
+        senderId,
+        receiverId,
+        listingId: listingId || null,
       },
     });
 
   if (existing) {
 
     throw new Error(
-      'La solicitud ya existe'
+      listingId
+        ? 'Ya contactaste al anfitrión sobre esta publicación'
+        : 'La solicitud ya existe'
     );
   }
 
@@ -33,6 +35,7 @@ export const sendRequest = async (
     data: {
       senderId,
       receiverId,
+      listingId: listingId || null,
     },
   });
 };
@@ -47,8 +50,17 @@ export const getReceivedRequests =
 
       include: {
         sender: {
-          include: {
+          select: {
+            id: true,
             profile: true,
+          },
+        },
+
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            coverImage: true,
           },
         },
       },
@@ -100,12 +112,32 @@ export const updateRequestStatus =
         },
       });
 
-    // SI ACEPTA -> crear conversación
+    // SI ACEPTA -> crear conversación (o reusar la existente para esa publicación)
     if (status === 'ACCEPTED') {
 
+      const existingConversation =
+        request.listingId
+          ? await prisma.conversation.findFirst({
+              where: {
+                listingId: request.listingId,
+                participants: {
+                  some: { userId: request.senderId },
+                },
+                AND: {
+                  participants: {
+                    some: { userId: request.receiverId },
+                  },
+                },
+              },
+            })
+          : null;
+
       const conversation =
-        await prisma.conversation.create({
+        existingConversation ||
+        (await prisma.conversation.create({
           data: {
+
+            listingId: request.listingId,
 
             participants: {
               create: [
@@ -120,7 +152,7 @@ export const updateRequestStatus =
               ],
             },
           },
-        });
+        }));
 
       return {
         request: updated,
